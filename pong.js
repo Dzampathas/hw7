@@ -1,5 +1,14 @@
 var gameState = 'PAUSED'; //PAUSED, PLAY, GAMEOVER
+var maxSpeed = 4;
 var playerWon = 0;
+var osc;
+var osc2;
+var pointSound;
+var playing1 = false;
+var playing = false;
+var timing;
+var timing1;
+
 var puck = {
   x: 200,
   y: 200,
@@ -38,21 +47,68 @@ var score2 = {
 
 function setup() {
   createCanvas(400, 400);
+	
+	
+	osc = new p5.Oscillator();
+  osc.setType('triangle');
+  osc.freq(500);
+  osc.amp(0);
+  osc.start();
+	
+	osc2 = new p5.Oscillator();
+  osc2.setType('triangle');
+  osc2.freq(1000);
+  osc2.amp(0);
+  osc2.start();
+}
+
+function playSound(){
+	
+	if(playing == false){
+		timing = millis();
+		osc.amp(0);
+	}
+	if(timing-millis() > 500 || playing == true){
+		osc.amp(0.5);
+		playing = false;
+	}
+	
+	if(playing1 == false){
+		timing1 = millis();
+		osc2.amp(0);
+	}
+	if(timing1-millis() > 500 || playing1 == true){
+		osc2.amp(0.5);
+		playing1 = false;
+	}
+	
 }
 
 function movePuck(){
   // move puck
   if (puck.y < puck.r || puck.y > height - puck.r) {
-    puck.ySpeed = -puck.ySpeed;
+			if(puck.xSpeed < 0){
+				maxSpeed -= 0.1;
+				puck.xSpeed -= 0.1;
+				puck.ySpeed = -puck.ySpeed - 0.1;
+				playing = true;
+			} else {
+				maxSpeed += 0.1;
+				puck.xSpeed += 0.1;
+				puck.ySpeed = -puck.ySpeed + 0.1;
+				playing = true;
+			}
   }
 	if(puck.x < 0){
 		//print("dead");
+		playing1 = true;
 		puck.x = width/2;
 		puck.y = height/2;
 		puck.ySpeed = 0;
 		puck.xSpeed = 4;
 		score2.v += 1;
 	} else if(puck.x > width){
+		playing1 = true;
 		puck.x = width/2;
 		puck.y = height/2;
 		puck.ySpeed = 0;
@@ -93,8 +149,16 @@ function paddles(){
 	 if (puck.x + puck.r > player2.x - player2.wd) {
     // check if puck is within paddle height...
     if (puck.y > player2.y && puck.y < player2.y + player2.ht) {
+			if(puck.xSpeed < 0){
+				maxSpeed -= 0.1;
+				puck.xSpeed -= 0.1;
+			} else {
+				maxSpeed += 0.1;
+				puck.xSpeed += 0.1;
+			}
       puck.xSpeed = -abs(puck.xSpeed);
-			puck.ySpeed = map(puck.y - (player2.y + player2.ht/2),-12,12,-4,4);
+			puck.ySpeed = map(puck.y - (player2.y + player2.ht/2),-12,12,-maxSpeed,maxSpeed);
+			playing = true;
     } else {
       // ???
     }
@@ -103,8 +167,16 @@ function paddles(){
 	  if (puck.x - puck.r < player1.x + player1.wd) {
     // check if puck is within paddle height...
     if (puck.y > player1.y && puck.y < player1.y + player1.ht) {
+						if(puck.xSpeed < 0){
+				maxSpeed -= 0.1;
+				puck.xSpeed -= 0.1;
+			} else {
+				maxSpeed += 0.1;
+				puck.xSpeed += 0.1;
+			}
       puck.xSpeed = abs(puck.xSpeed);
-			puck.ySpeed = map(puck.y - (player1.y + player1.ht/2),-12,12,-4,4);
+			puck.ySpeed = map(puck.y - (player1.y + player1.ht/2),-12,12,-maxSpeed/2,maxSpeed/2);
+			playing = true;
     } else {
       // ???
     }
@@ -134,7 +206,11 @@ function draw() {
 	if(gameState == 'PLAY'){
 				// draw puck
 		fill(200,200,255);
+		playSound();
 		ellipse(puck.x, puck.y, puck.r*2);
+		stroke(255);
+		line(width/2,0,width/2,height);
+		noStroke();
 		movePuck();
 		paddles();
 		printScore();
@@ -154,7 +230,10 @@ function draw() {
 		text("Player " + playerWon + " Wins", width/5, height/4, (width/4)*3, height/2);
 		text("Click to play again", width/5, height/2, (width/4)*3, height/2);
 		if(mouseIsPressed == true){
-			 gameState = 'PLAY';
+			gameState = 'PLAY';
+			playerWon = 0;
+			score1.v = 0;
+			score2.v = 0;
 		}
 	}
 
